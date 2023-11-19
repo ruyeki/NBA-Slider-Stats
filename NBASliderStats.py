@@ -3,13 +3,22 @@ from nba_api.stats.endpoints import leaguedashplayerstats
 from nba_api.stats.static import players
 import pandas as pd
 
+<<<<<<< HEAD
 def get_player_season_totals(active_player_ids, year):
     season = leaguedashplayerstats.LeagueDashPlayerStats(season=year)
     season_totals_regular_season = season.get_data_frames()[0]
+=======
+
+def get_player_season_totals(active_player_ids):
+    year = '2023-24'
+    season = leaguedashplayerstats.LeagueDashPlayerStats(season=year)
+    season_totals_regular_season = season.get_data_frames()[0]  # Get the SeasonTotalsRegularSeason dataframe
+>>>>>>> e40e69d61b9f41f8db1bc22a6ab724a170de0d0a
     season_totals_active_players = season_totals_regular_season[season_totals_regular_season['PLAYER_ID'].isin(active_player_ids)]
     filtered_season_totals = season_totals_active_players[columns_to_keep]
     return filtered_season_totals
 
+<<<<<<< HEAD
 def calculate_per_game_stats(data):
     #calculates per game cause i don't think it's avaialble for the nba_api?? or i might be blind
     data['PTS '] = data['PTS'] / data['GP']
@@ -104,3 +113,68 @@ if __name__ == "__main__":
 
     st.write("Season Per Game Stats (Regular Season) for Active NBA Players:")
     st.write(sorted_playersPG)
+=======
+if __name__ == "__main__":
+    columns_to_keep = [
+            "PLAYER_ID",
+            "PLAYER_NAME",
+            "AGE",
+            "GP",
+            "W",
+            "L",
+            "W_PCT",
+            "MIN",
+            "FGM",
+            "FGA",
+            "FG_PCT",
+            "FG3M",
+            "FG3A",
+            "FG3_PCT",
+            "FTM",
+            "FTA",
+            "FT_PCT",
+            "OREB",
+            "DREB",
+            "REB",
+            "AST",
+            "TOV",
+            "STL",
+            "BLK",
+            "BLKA",
+            "PF",
+            "PFD",
+            "PTS",
+            "PLUS_MINUS",
+            "DD2",
+            "TD3",
+    
+]
+
+    st.title('NBA Player Season Totals (Regular Season)')
+    
+    active_players_data = players.get_active_players()
+    active_player_ids = [player['id'] for player in active_players_data]
+    season_totals_active_players = get_player_season_totals(active_player_ids)
+
+    st.sidebar.title('Rank Stats')
+
+    # Create sliders for each stat
+    sliders = {}
+    for stat in columns_to_keep:
+        sliders[stat] = st.sidebar.slider(f'Importance of {stat}', 0.0, 1.0, 0.5, 0.1)
+
+    # Calculate weighted sum based on user-defined importance
+    weights = pd.Series(sliders)
+    normalized_weights = weights / weights.sum()
+
+    # Multiply each column by its weight and sum across columns
+    weighted_totals = season_totals_active_players[columns_to_keep].mul(normalized_weights)
+    season_totals_active_players['Weighted_Sum'] = weighted_totals.sum(axis=1)
+
+    # Display sorted players based on weighted sum
+    sorted_players = season_totals_active_players.sort_values(by='Weighted_Sum', ascending=False)
+
+    
+    st.write("Season Totals (Regular Season) for Active NBA Players:")
+    st.write(sorted_players)
+>>>>>>> e40e69d61b9f41f8db1bc22a6ab724a170de0d0a
