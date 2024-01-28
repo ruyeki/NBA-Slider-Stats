@@ -2,6 +2,7 @@ import streamlit as st
 from nba_api.stats.endpoints import leaguedashplayerstats
 from nba_api.stats.static import players
 import pandas as pd
+from configureFile import generate_streamlit_config
 
 def get_player_season_totals(active_player_ids, selected_year):
     year = selected_year
@@ -36,6 +37,8 @@ def calculate_per_game_stats(data):
     return data
 
 if __name__ == "__main__":
+    # Creates script for changing colors.
+    generate_streamlit_config()
     # Removing unnecessary columns
     columns_to_keep = [
         "PLAYER_NAME", "AGE", "GP", "W", "L", "W_PCT", "MIN", "FGM", "FGA", "FG_PCT",
