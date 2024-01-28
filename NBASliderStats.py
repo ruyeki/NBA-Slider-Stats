@@ -115,7 +115,7 @@ if __name__ == "__main__":
     season_totals_active_players['Weighted_Sum'] = weighted_totals.sum(axis=1)
 
     # Display sorted players based on weighted sum
-    sorted_players = season_totals_active_players.sort_values(by='Weighted_Sum', ascending=False)
+    sorted_players = season_totals_active_players.sort_values(by=['Weighted_Sum', 'PLAYER_NAME'], ascending=[False, True])
 
     # Display sorted players based on weighted sum
     st.write(f"Season {st.session_state.selected_tab} Stats (Regular Season) for Active NBA Players:")
