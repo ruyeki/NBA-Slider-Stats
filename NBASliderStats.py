@@ -1,6 +1,8 @@
 import streamlit as st
 from nba_api.stats.endpoints import leaguedashplayerstats
+from nba_api.stats.endpoints import playerestimatedmetrics
 from nba_api.stats.static import players
+from nba_api.stats.endpoints import scoreboardv2
 import pandas as pd
 from configureFile import generate_streamlit_config
 
@@ -11,6 +13,14 @@ def get_player_season_totals(active_player_ids, selected_year):
     season_totals_active_players = season_totals_regular_season[season_totals_regular_season['PLAYER_ID'].isin(active_player_ids)]
     filtered_season_totals = season_totals_active_players[columns_to_keep]
     return filtered_season_totals
+
+#For advanced stats section
+def advanced_stats_df(active_player_ids, selected_year):
+    advanced_player_stats = playerestimatedmetrics.PlayerEstimatedMetrics(season=selected_year)
+    data_frame = advanced_player_stats.get_data_frames()[0]
+    active_data_frame = data_frame[data_frame['PLAYER_ID'].isin(active_player_ids)]
+    filtered_data_frame_adv = active_data_frame[columns_to_keepAdv]
+    return filtered_data_frame_adv
 
 def calculate_per_game_stats(data):
     # calculates per game cause I don't think it's available for the nba_api?? or I might be blind
@@ -35,15 +45,15 @@ def calculate_per_game_stats(data):
     data['MIN '] = data['MIN'] / data['GP']
     data = data[columns_to_keepPG]
     return data
+        
 
 if __name__ == "__main__":
-    # Creates script for changing colors.
-    generate_streamlit_config()
-    # Removing unnecessary columns
+    #Removing unneccessary columns
     columns_to_keep = [
         "PLAYER_NAME", "AGE", "GP", "W", "L", "W_PCT", "MIN", "FGM", "FGA", "FG_PCT",
         "FG3M", "FG3A", "FG3_PCT", "FTM", "FTA", "FT_PCT", "OREB", "DREB", "REB",
-        "AST", "TOV", "STL", "BLK", "BLKA", "PF", "PFD", "PTS", "PLUS_MINUS", "DD2", "TD3"
+        "AST", "TOV", "STL", "BLK", "BLKA", "PF", "PFD", "PTS", "PLUS_MINUS", "DD2", "TD3",
+        "NBA_FANTASY_PTS", "NBA_FANTASY_PTS_RANK"
     ]
 
     # Added a space in every category to ensure it wouldn't get confused when using both the Season total and per game stats
@@ -51,6 +61,20 @@ if __name__ == "__main__":
         "PLAYER_NAME", "MIN ", "FGM ", "FGA ",
         "FG3M ", "FG3A ", "FTM ", "FTA ", "OREB ", "DREB ", "REB ",
         "AST ", "TOV ", "STL ", "BLK ", "BLKA ", "PF ", "PFD ", "PTS ", "PLUS_MINUS ",
+    ]
+    
+    #For advanced stats
+    columns_to_keepAdv = [
+            "E_OFF_RATING",
+            "E_DEF_RATING",
+            "E_NET_RATING",
+            "E_AST_RATIO",
+            "E_OREB_PCT",
+            "E_DREB_PCT",
+            "E_REB_PCT",
+            "E_TOV_PCT",
+            "E_USG_PCT",
+            "E_PACE"
     ]
 
     st.title('NBA Player Stats (Regular Season)')
@@ -69,9 +93,10 @@ if __name__ == "__main__":
     # Throughout this whole rest I have the same lines for both season total and season per game
     season_totals_active_players = get_player_season_totals(active_player_ids, selected_year)
     season_perGame_active_players = calculate_per_game_stats(season_totals_active_players.copy())
+    advanced_stats_active_players = advanced_stats_df(active_player_ids, selected_year)
 
     # Create tabs
-    tabs = ["Total Stats", "Per Game Stats"]
+    tabs = ["Total Stats", "Per Game Stats", "Advanced Stats"]
     selected_tab = st.radio("Select Stats Type", tabs, key="tabs")
 
     # Update session_state
@@ -87,11 +112,17 @@ if __name__ == "__main__":
     st.sidebar.write("### Per Game Stats")
     selected_stats_per_game = st.sidebar.multiselect('Select Per Game Stats to Rank', [col for col in columns_to_keepPG if col != 'PLAYER_NAME'])
 
+    st.sidebar.write("### Advanced Stats")
+    selected_stats_advanced = st.sidebar.multiselect('Select Advanced Stats to Rank', [col for col in columns_to_keepAdv if col != 'PLAYER_NAME'])
+
+
     # Filter the DataFrame based on selected stats
     if st.session_state.selected_tab == "Total Stats":
         filtered_data = season_totals_active_players[selected_stats_total]
     elif st.session_state.selected_tab == "Per Game Stats":
         filtered_data = season_perGame_active_players[selected_stats_per_game]
+    elif st.session_state.selected_tab == "Advanced Stats":
+        filtered_data = advanced_stats_active_players[selected_stats_advanced]
 
     # Calculate weighted sum based on user-defined importance
     normalized_data = (filtered_data - filtered_data.min()) / (filtered_data.max() - filtered_data.min())
@@ -106,6 +137,9 @@ if __name__ == "__main__":
             sliders[stat] = st.sidebar.slider(f'Importance of {stat}', 0.0, 1.0, 0.5, 0.01)
     elif st.session_state.selected_tab == "Per Game Stats":
         for stat in selected_stats_per_game:
+            sliders[stat] = st.sidebar.slider(f'Importance of {stat}', 0.0, 1.0, 0.5, 0.01)
+    elif st.session_state.selected_tab == "Advanced Stats":
+        for stat in selected_stats_advanced:
             sliders[stat] = st.sidebar.slider(f'Importance of {stat}', 0.0, 1.0, 0.5, 0.01)
 
     # Calculate weighted sum based on user-defined importance
