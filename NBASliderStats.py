@@ -95,8 +95,10 @@ if __name__ == "__main__":
     season_perGame_active_players = calculate_per_game_stats(season_totals_active_players.copy())
     advanced_stats_active_players = advanced_stats_df(active_player_ids, selected_year)
 
+    season_totals_active_players = pd.concat([season_totals_active_players, advanced_stats_active_players.loc[:, ~advanced_stats_active_players.columns.isin(season_totals_active_players.columns)]], axis=1)
+
     # Create tabs
-    tabs = ["Total Stats", "Per Game Stats", "Advanced Stats"]
+    tabs = ["Total Stats", "Per Game Stats"]
     selected_tab = st.radio("Select Stats Type", tabs, key="tabs")
 
     # Update session_state
@@ -107,13 +109,10 @@ if __name__ == "__main__":
 
     # Two separate tabs for selecting stat types
     st.sidebar.write("### Total Stats")
-    selected_stats_total = st.sidebar.multiselect('Select Total Stats to Rank', [col for col in columns_to_keep if col != 'PLAYER_NAME'])
+    selected_stats_total = st.sidebar.multiselect('Select Total Stats to Rank', [col for col in columns_to_keep + columns_to_keepAdv if col != 'PLAYER_NAME'])
 
     st.sidebar.write("### Per Game Stats")
     selected_stats_per_game = st.sidebar.multiselect('Select Per Game Stats to Rank', [col for col in columns_to_keepPG if col != 'PLAYER_NAME'])
-
-    st.sidebar.write("### Advanced Stats")
-    selected_stats_advanced = st.sidebar.multiselect('Select Advanced Stats to Rank', [col for col in columns_to_keepAdv if col != 'PLAYER_NAME'])
 
 
     # Filter the DataFrame based on selected stats
@@ -121,8 +120,7 @@ if __name__ == "__main__":
         filtered_data = season_totals_active_players[selected_stats_total]
     elif st.session_state.selected_tab == "Per Game Stats":
         filtered_data = season_perGame_active_players[selected_stats_per_game]
-    elif st.session_state.selected_tab == "Advanced Stats":
-        filtered_data = advanced_stats_active_players[selected_stats_advanced]
+        
 
     # Calculate weighted sum based on user-defined importance
     normalized_data = (filtered_data - filtered_data.min()) / (filtered_data.max() - filtered_data.min())
@@ -137,9 +135,6 @@ if __name__ == "__main__":
             sliders[stat] = st.sidebar.slider(f'Importance of {stat}', 0.0, 1.0, 0.5, 0.01)
     elif st.session_state.selected_tab == "Per Game Stats":
         for stat in selected_stats_per_game:
-            sliders[stat] = st.sidebar.slider(f'Importance of {stat}', 0.0, 1.0, 0.5, 0.01)
-    elif st.session_state.selected_tab == "Advanced Stats":
-        for stat in selected_stats_advanced:
             sliders[stat] = st.sidebar.slider(f'Importance of {stat}', 0.0, 1.0, 0.5, 0.01)
 
     # Calculate weighted sum based on user-defined importance
