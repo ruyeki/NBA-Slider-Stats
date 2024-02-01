@@ -125,6 +125,7 @@ if __name__ == "__main__":
     # Calculate weighted sum based on user-defined importance
     normalized_data = (filtered_data - filtered_data.min()) / (filtered_data.max() - filtered_data.min())
 
+    normalized_dataPG = (filtered_data - filtered_data.min()) / (filtered_data.max() - filtered_data.min())
     # Calculate the total weighted sum for each player
     st.sidebar.title('Rank Stats')
     selected_stats = []
@@ -139,13 +140,17 @@ if __name__ == "__main__":
 
     # Calculate weighted sum based on user-defined importance
     weighted_totals = normalized_data * pd.Series(sliders)
+    weighted_totalsPG = normalized_dataPG * pd.Series(sliders)
 
     # Calculate the total weighted sum for each player
     season_totals_active_players['Weighted_Sum'] = weighted_totals.sum(axis=1)
-
+    season_perGame_active_players['Weighted_Sum'] = weighted_totals.sum(axis=1) + weighted_totalsPG.sum(axis=1)
     # Display sorted players based on weighted sum
     sorted_players = season_totals_active_players.sort_values(by=['Weighted_Sum', 'PLAYER_NAME'], ascending=[False, True])
-
+    sorted_playersPG = season_perGame_active_players.sort_values(by=['Weighted_Sum', 'PLAYER_NAME'], ascending=[False, True])
     # Display sorted players based on weighted sum
-    st.write(f"Season {st.session_state.selected_tab} Stats (Regular Season) for Active NBA Players:")
+    st.write(f"Season Total Stats (Regular Season) for Active NBA Players:")
     st.write(sorted_players)
+
+    st.write("Season Per Game Stats (Regular Season) for Active NBA Players:")
+    st.write(sorted_playersPG)
