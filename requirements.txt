@@ -1,0 +1,3 @@
+nba_api.stats.endpoints 
+nba_api.stats.static
+pandas
