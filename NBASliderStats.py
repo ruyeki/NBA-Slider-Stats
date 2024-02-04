@@ -45,6 +45,7 @@ def calculate_per_game_stats(data):
     data['MIN '] = data['MIN'] / data['GP']
     data = data[columns_to_keepPG]
     return data
+        
 
 if __name__ == "__main__":
     #Removing unneccessary columns
@@ -93,9 +94,6 @@ if __name__ == "__main__":
     season_totals_active_players = get_player_season_totals(active_player_ids, selected_year)
     season_perGame_active_players = calculate_per_game_stats(season_totals_active_players.copy())
     advanced_stats_active_players = advanced_stats_df(active_player_ids, selected_year)
-    
-    season_totals_active_players = pd.concat([season_totals_active_players, advanced_stats_active_players], axis=1)
-    season_perGame_active_players = pd.concat([season_perGame_active_players, advanced_stats_active_players], axis=1)
 
     season_totals_active_players = pd.concat([season_totals_active_players, advanced_stats_active_players.loc[:, ~advanced_stats_active_players.columns.isin(season_totals_active_players.columns)]], axis=1)
 
@@ -111,30 +109,17 @@ if __name__ == "__main__":
 
     # Two separate tabs for selecting stat types
     st.sidebar.write("### Total Stats")
-<<<<<<< HEAD
     selected_stats_total = st.sidebar.multiselect('Select Total Stats to Rank', [col for col in columns_to_keep + columns_to_keepAdv if col != 'PLAYER_NAME'])
-=======
-    selected_stats_total = st.sidebar.multiselect('Select Total Stats to Rank', [col for col in columns_to_keep+columns_to_keepAdv if col != 'PLAYER_NAME'])
->>>>>>> 48518f947296a2f7e864dfda78d293efe71f9d65
 
     st.sidebar.write("### Per Game Stats")
     selected_stats_per_game = st.sidebar.multiselect('Select Per Game Stats to Rank', [col for col in columns_to_keepPG if col != 'PLAYER_NAME'])
 
+    # Sidebar option for dropping unused stats
+    drop_unused_stats = st.sidebar.checkbox("Drop unused stats", False)
+
 
     # Filter the DataFrame based on selected stats
-    if st.session_state.selected_tab == "Total Stats":
-        filtered_data = season_totals_active_players[selected_stats_total]
-    elif st.session_state.selected_tab == "Per Game Stats":
-        filtered_data = season_perGame_active_players[selected_stats_per_game]
-<<<<<<< HEAD
-        
-=======
->>>>>>> 48518f947296a2f7e864dfda78d293efe71f9d65
-
-    # Calculate weighted sum based on user-defined importance
-    normalized_data = (filtered_data - filtered_data.min()) / (filtered_data.max() - filtered_data.min())
-
-    normalized_dataPG = (filtered_data - filtered_data.min()) / (filtered_data.max() - filtered_data.min())
+    
     # Calculate the total weighted sum for each player
     st.sidebar.title('Rank Stats')
     selected_stats = []
@@ -147,19 +132,41 @@ if __name__ == "__main__":
         for stat in selected_stats_per_game:
             sliders[stat] = st.sidebar.slider(f'Importance of {stat}', 0.0, 1.0, 0.5, 0.01)
 
+    if st.session_state.selected_tab == "Total Stats":
+        filtered_data = season_totals_active_players[selected_stats_total]
+    elif st.session_state.selected_tab == "Per Game Stats":
+        filtered_data = season_perGame_active_players[selected_stats_per_game]
+        
+
+    # Calculate weighted sum based on user-defined importance
+    normalized_data = (filtered_data - filtered_data.min()) / (filtered_data.max() - filtered_data.min())
+
+    normalized_dataPG = (filtered_data - filtered_data.min()) / (filtered_data.max() - filtered_data.min())
     # Calculate weighted sum based on user-defined importance
     weighted_totals = normalized_data * pd.Series(sliders)
     weighted_totalsPG = normalized_dataPG * pd.Series(sliders)
 
     # Calculate the total weighted sum for each player
     season_totals_active_players['Weighted_Sum'] = weighted_totals.sum(axis=1)
-    season_perGame_active_players['Weighted_Sum'] = weighted_totals.sum(axis=1) + weighted_totalsPG.sum(axis=1)
+    season_perGame_active_players['Weighted_Sum'] = weighted_totalsPG.sum(axis=1)
     # Display sorted players based on weighted sum
     sorted_players = season_totals_active_players.sort_values(by=['Weighted_Sum', 'PLAYER_NAME'], ascending=[False, True])
     sorted_playersPG = season_perGame_active_players.sort_values(by=['Weighted_Sum', 'PLAYER_NAME'], ascending=[False, True])
-    # Display sorted players based on weighted sum
-    st.write(f"Season Total Stats (Regular Season) for Active NBA Players:")
-    st.write(sorted_players)
 
-    st.write("Season Per Game Stats (Regular Season) for Active NBA Players:")
-    st.write(sorted_playersPG)
+    if drop_unused_stats:
+        if st.session_state.selected_tab == "Total Stats":
+            sorted_players = pd.concat([sorted_players['PLAYER_NAME'], sorted_players[selected_stats_total], sorted_players['Weighted_Sum']], axis = 1)
+        elif st.session_state.selected_tab == "Per Game Stats": 
+            sorted_playersPG = pd.concat([sorted_playersPG['PLAYER_NAME'], sorted_playersPG[selected_stats_per_game], sorted_playersPG['Weighted_Sum']], axis = 1)
+
+
+    if st.session_state.selected_tab == "Total Stats":
+        st.write(f"Season Total Stats (Regular Season) for Active NBA Players:")
+        st.write(sorted_players)
+    elif st.session_state.selected_tab == "Per Game Stats":
+        st.write("Season Per Game Stats (Regular Season) for Active NBA Players:")
+        st.write(sorted_playersPG)  
+    
+    
+
+    
