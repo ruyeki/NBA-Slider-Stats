@@ -1,2 +1,4 @@
-nba-api
+streamlit
+nba_api
 pandas
+
