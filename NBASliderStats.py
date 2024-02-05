@@ -48,6 +48,7 @@ def calculate_per_game_stats(data):
         
 
 if __name__ == "__main__":
+    generate_streamlit_config()
     #Removing unneccessary columns
     columns_to_keep = [
         "PLAYER_NAME", "AGE", "GP", "W", "L", "W_PCT", "MIN", "FGM", "FGA", "FG_PCT",
