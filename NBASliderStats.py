@@ -39,7 +39,7 @@ def advanced_stats_df(active_player_ids, selected_year, position):
 def filtered_dictionary(data_frame):
     filtered = {}
     for category in data_frame.columns:
-        if category != 'PLAYER_NAME': # Player Name does not have a "range"
+        if category != 'PLAYER_NAME': # Player and Team Name does not have a "range"
             filtered[category] = [data_frame[category].min(), data_frame[category].max()]
     return filtered
 
@@ -215,12 +215,18 @@ if __name__ == "__main__":
             if stat in filtered_data_perGame:
                 sliders_filter[stat] = st.sidebar.slider(f'Range of {stat}', filtered_data_perGame[stat][0], filtered_data_perGame[stat][1], (filtered_data_perGame[stat][0] + (filtered_data_perGame[stat][0]+filtered_data_perGame[stat][1])/4, filtered_data_perGame[stat][1] - (filtered_data_perGame[stat][0]+filtered_data_perGame[stat][1])/4))
     elif st.session_state.selected_tab == "Team Stats":
-        for stat in selected_stats_per_game:
+        for stat in selected_team_stats:
             sliders[stat] = st.sidebar.slider(f'Importance of {stat}', -1.0, 1.0, 0.5, 0.01)
         st.sidebar.title("Range of Stats")
-        for stat in selected_stats_per_game:
+        for stat in selected_team_stats:
             if stat in filtered_data_teams:
-                sliders_filter[stat] = st.sidebar.slider(f'Range of {stat}', filtered_data_teams[stat][0], filtered_data_teams[stat][1], (filtered_data_teams[stat][0] + (filtered_data_teams[stat][0]+filtered_data_teams[stat][1])/4, filtered_data_teams[stat][1] - (filtered_data_teams[stat][0]+filtered_data_teams[stat][1])/4))
+                # Had to do it this way because team stats are kept as int64 and not floats
+                sliders_filter[stat] = st.sidebar.slider(f'Range of {stat}', 
+                                         float(filtered_data_teams[stat][0]), 
+                                         float(filtered_data_teams[stat][1]), 
+                                         (float(filtered_data_teams[stat][0]) + (float(filtered_data_teams[stat][0]) + float(filtered_data_teams[stat][1])) / 4, 
+                                         float(filtered_data_teams[stat][1]) - (float(filtered_data_teams[stat][0]) + float(filtered_data_teams[stat][1])) / 4))
+
                 
                 
     # Exclude all rows that don't fit the ranges
@@ -238,6 +244,13 @@ if __name__ == "__main__":
             filtered_df = filtered_df[filtered_df[col].between(*sliders_filter[col])]
         
     season_perGame_active_players = filtered_df
+
+    filtered_df = season_teams.copy()
+    for col in season_teams.columns[1:]:
+        if col in sliders_filter:
+            filtered_df = filtered_df[filtered_df[col].between(*sliders_filter[col])]
+        
+    season_teams = filtered_df
 
     # Filter the DataFrame based on selected stats
     if st.session_state.selected_tab == "Total Stats":
@@ -275,7 +288,7 @@ if __name__ == "__main__":
         elif st.session_state.selected_tab == "Per Game Stats": 
             sorted_playersPG = pd.concat([sorted_playersPG['PLAYER_NAME'], sorted_playersPG[selected_stats_per_game], sorted_playersPG['Weighted_Sum']], axis = 1)
         elif st.session_state.selected_tab == "Team Stats":
-            sorted_teams = pd.concat([sorted_teams['TEAM_NAME'], sorted_playersPG[selected_stats_per_game], sorted_playersPG['Weighted_Sum']], axis = 1)
+            sorted_teams = pd.concat([sorted_teams['TEAM_NAME'], sorted_teams[selected_team_stats], sorted_teams['Weighted_Sum']], axis = 1)
 
     if st.session_state.selected_tab == "Total Stats":
         st.write("Season Total Stats (Regular Season) for Active NBA Players:")
@@ -285,5 +298,5 @@ if __name__ == "__main__":
         st.write(sorted_playersPG)  
     elif st.session_state.selected_tab == "Team Stats":
         # Display sorted teams based on weighted sum
-        st.write("Season Stats (Regular Season) for NBA Teams:")
+        st.write("Season Total Stats (Regular Season) for NBA Teams:")
         st.write(sorted_teams)
