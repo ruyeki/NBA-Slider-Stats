@@ -1,1 +1,0 @@
-sorted_players = season_totals_active_players.sort_values(by='Weighted_Sum', ascending=False)
