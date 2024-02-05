@@ -88,6 +88,7 @@ if __name__ == "__main__":
             "W",
             "L",
             "W_PCT",
+            "PTS",
             "FGM",
             "FGA",
             "FG_PCT",
