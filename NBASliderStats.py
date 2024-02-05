@@ -206,14 +206,23 @@ if __name__ == "__main__":
         st.sidebar.title("Range of Stats")
         for stat in selected_stats_total:
             if stat in filtered_data_total:
-                sliders_filter[stat] = st.sidebar.slider(f'Range of {stat}', filtered_data_total[stat][0], filtered_data_total[stat][1], (filtered_data_total[stat][0] + (filtered_data_total[stat][0]+filtered_data_total[stat][1])/4, filtered_data_total[stat][1] - (filtered_data_total[stat][0]+filtered_data_total[stat][1])/4))
+                sliders_filter[stat] = st.sidebar.slider(f'Range of {stat}', 
+                                         float(filtered_data_total[stat][0]), 
+                                         float(filtered_data_total[stat][1]), 
+                                         (float(filtered_data_total[stat][0]), 
+                                         float(filtered_data_total[stat][1])))
+                                         
     elif st.session_state.selected_tab == "Per Game Stats":
         for stat in selected_stats_per_game:
             sliders[stat] = st.sidebar.slider(f'Importance of {stat}', -1.0, 1.0, 0.5, 0.01)
         st.sidebar.title("Range of Stats")
         for stat in selected_stats_per_game:
             if stat in filtered_data_perGame:
-                sliders_filter[stat] = st.sidebar.slider(f'Range of {stat}', filtered_data_perGame[stat][0], filtered_data_perGame[stat][1], (filtered_data_perGame[stat][0] + (filtered_data_perGame[stat][0]+filtered_data_perGame[stat][1])/4, filtered_data_perGame[stat][1] - (filtered_data_perGame[stat][0]+filtered_data_perGame[stat][1])/4))
+                sliders_filter[stat] = st.sidebar.slider(f'Range of {stat}', 
+                                         float(filtered_data_perGame[stat][0]), 
+                                         float(filtered_data_perGame[stat][1]), 
+                                         (float(filtered_data_perGame[stat][0]), 
+                                         float(filtered_data_perGame[stat][1])))
     elif st.session_state.selected_tab == "Team Stats":
         for stat in selected_team_stats:
             sliders[stat] = st.sidebar.slider(f'Importance of {stat}', -1.0, 1.0, 0.5, 0.01)
@@ -223,9 +232,9 @@ if __name__ == "__main__":
                 # Had to do it this way because team stats are kept as int64 and not floats
                 sliders_filter[stat] = st.sidebar.slider(f'Range of {stat}', 
                                          float(filtered_data_teams[stat][0]), 
-                                         float(filtered_data_teams[stat][1]), 
-                                         (float(filtered_data_teams[stat][0]) + (float(filtered_data_teams[stat][0]) + float(filtered_data_teams[stat][1])) / 4, 
-                                         float(filtered_data_teams[stat][1]) - (float(filtered_data_teams[stat][0]) + float(filtered_data_teams[stat][1])) / 4))
+                                         float(filtered_data_teams[stat][1]),
+                                         (float(filtered_data_teams[stat][0]), 
+                                         float(filtered_data_teams[stat][1])))
 
                 
                 
