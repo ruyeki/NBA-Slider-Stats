@@ -1,3 +1,4 @@
+import os
 def generate_streamlit_config():
     # Define the theme settings
     theme_settings = """
