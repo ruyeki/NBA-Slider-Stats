@@ -3,14 +3,17 @@ from nba_api.stats.endpoints import leaguedashplayerstats
 from nba_api.stats.endpoints import playerestimatedmetrics
 from nba_api.stats.endpoints import leaguedashplayerstats
 from nba_api.stats.endpoints import leaguedashteamstats
+from nba_api.stats.endpoints import commonplayerinfo
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import scoreboardv2
 import pandas as pd
 from configureFile import generate_streamlit_config
+import os
 
-def get_player_season_totals(active_player_ids, selected_year):
+def get_player_season_totals(active_player_ids, selected_year, position):
     year = selected_year
-    season = leaguedashplayerstats.LeagueDashPlayerStats(season=year)
+    # Add position filtering as a parameter
+    season = leaguedashplayerstats.LeagueDashPlayerStats(season=year, player_position_abbreviation_nullable=position)
     season_totals_regular_season = season.get_data_frames()[0]  # Get the SeasonTotalsRegularSeason dataframe
     season_totals_active_players = season_totals_regular_season[season_totals_regular_season['PLAYER_ID'].isin(active_player_ids)]
     filtered_season_totals = season_totals_active_players[columns_to_keep]
@@ -25,12 +28,20 @@ def team_stats_df(selected_year):
     return filtered_team_frame
     
 #For advanced stats section
-def advanced_stats_df(active_player_ids, selected_year):
+def advanced_stats_df(active_player_ids, selected_year, position):
     advanced_player_stats = playerestimatedmetrics.PlayerEstimatedMetrics(season=selected_year)
     data_frame = advanced_player_stats.get_data_frames()[0]
     active_data_frame = data_frame[data_frame['PLAYER_ID'].isin(active_player_ids)]
     filtered_data_frame_adv = active_data_frame[columns_to_keepAdv]
     return filtered_data_frame_adv
+
+# Create min max dictionary of a dataframe
+def filtered_dictionary(data_frame):
+    filtered = {}
+    for category in data_frame.columns:
+        if category != 'PLAYER_NAME': # Player Name does not have a "range"
+            filtered[category] = [data_frame[category].min(), data_frame[category].max()]
+    return filtered
 
 def calculate_per_game_stats(data):
     # calculates per game cause I don't think it's available for the nba_api?? or I might be blind
@@ -57,19 +68,20 @@ def calculate_per_game_stats(data):
     return data
 
 if __name__ == "__main__":
+    generate_streamlit_config()
     #Removing unneccessary columns
     columns_to_keep = [
-        "PLAYER_NAME", "AGE", "GP", "W", "L", "W_PCT", "MIN", "FGM", "FGA", "FG_PCT",
+        "PLAYER_NAME", "AGE","PTS","MIN", "GP", "W", "L", "W_PCT", "FGM", "FGA", "FG_PCT",
         "FG3M", "FG3A", "FG3_PCT", "FTM", "FTA", "FT_PCT", "OREB", "DREB", "REB",
-        "AST", "TOV", "STL", "BLK", "BLKA", "PF", "PFD", "PTS", "PLUS_MINUS", "DD2", "TD3",
+        "AST", "TOV", "STL", "BLK", "BLKA", "PF", "PFD", "PLUS_MINUS", "DD2", "TD3",
         "NBA_FANTASY_PTS"
     ]
 
     # Added a space in every category to ensure it wouldn't get confused when using both the Season total and per game stats
     columns_to_keepPG = [
-        "PLAYER_NAME", "MIN ", "FGM ", "FGA ",
+        "PLAYER_NAME", "PTS ", "MIN ", "FGM ", "FGA ",
         "FG3M ", "FG3A ", "FTM ", "FTA ", "OREB ", "DREB ", "REB ",
-        "AST ", "TOV ", "STL ", "BLK ", "BLKA ", "PF ", "PFD ", "PTS ", "PLUS_MINUS ",
+        "AST ", "TOV ", "STL ", "BLK ", "BLKA ", "PF ", "PFD ", "PLUS_MINUS ",
     ]
     
     columns_to_keepTeam = [
@@ -117,6 +129,15 @@ if __name__ == "__main__":
     available_years = [f"{year}-{str(year+1)[-2:]}" for year in range(2023, 1995, -1)]  # Adjust the range as needed
     selected_year = st.sidebar.selectbox('Select a Year', available_years)
 
+   # Add positions filtering
+    st.sidebar.title('Select Position')
+    selected_position = st.sidebar.radio('Position', ('Any Position','G', 'F', 'C'))
+
+    #Case for if all positions are wanted
+    if 'Any Position' in selected_position:
+        selected_position = []
+    
+
     # Need to change the variable names because it says active right now but I have it
     # set to all NBA players at the moment
     # We need options for filters which sounds like a lot of busy work like "only show ppg
@@ -126,13 +147,12 @@ if __name__ == "__main__":
     
 
     # Throughout this whole rest I have the same lines for both season total and season per game
-    season_totals_active_players = get_player_season_totals(active_player_ids, selected_year)
+    season_totals_active_players = get_player_season_totals(active_player_ids, selected_year, selected_position)
     season_perGame_active_players = calculate_per_game_stats(season_totals_active_players.copy())
-    advanced_stats_active_players = advanced_stats_df(active_player_ids, selected_year)
-    season_teams = team_stats_df(selected_year)
     
-    season_totals_active_players = pd.concat([season_totals_active_players, advanced_stats_active_players], axis=1)
-    season_perGame_active_players = pd.concat([season_perGame_active_players, advanced_stats_active_players], axis=1)
+    season_teams = team_stats_df(selected_year)
+    advanced_stats_active_players = advanced_stats_df(active_player_ids, selected_year, selected_position)
+    season_totals_active_players = pd.concat([season_totals_active_players, advanced_stats_active_players.loc[:, ~advanced_stats_active_players.columns.isin(season_totals_active_players.columns)]], axis=1)
 
     # Create tabs
     tabs = ["Total Stats", "Per Game Stats", "Team Stats"]
@@ -146,14 +166,78 @@ if __name__ == "__main__":
 
     # Two separate tabs for selecting stat types
     st.sidebar.write("### Total Stats")
-    selected_stats_total = st.sidebar.multiselect('Select Total Stats to Rank', [col for col in columns_to_keep+columns_to_keepAdv if col != 'PLAYER_NAME'])
+
+    selected_stats_total = st.sidebar.multiselect('Select Total Stats to Rank', [col for col in columns_to_keep + columns_to_keepAdv if col != 'PLAYER_NAME'])
+
+
 
     st.sidebar.write("### Per Game Stats")
     selected_stats_per_game = st.sidebar.multiselect('Select Per Game Stats to Rank', [col for col in columns_to_keepPG if col != 'PLAYER_NAME'])
 
+
     st.sidebar.write("### Team Stats")
     #CHECK THIS PART
     selected_team_stats = st.sidebar.multiselect('Select Team Stats to Rank', [col for col in columns_to_keepTeam if col != 'TEAM_NAME'])
+
+    
+
+
+    # Create filter dictionaries for total and per game
+    filtered_data_total = filtered_dictionary(season_totals_active_players)
+    filtered_data_perGame = filtered_dictionary(season_perGame_active_players)
+    filtered_data_teams = filtered_dictionary(season_teams)
+
+
+
+    # Sidebar option for dropping unused stats
+    drop_unused_stats = st.sidebar.checkbox("Drop unused stats", False)
+
+    # Filter the DataFrame based on selected stats
+    st.sidebar.title('Rank Stats')
+    selected_stats = []
+    sliders = {}
+    sliders_filter = {}
+
+    
+    if st.session_state.selected_tab == "Total Stats":
+        for stat in selected_stats_total:
+            sliders[stat] = st.sidebar.slider(f'Importance of {stat}', -1.0, 1.0, 0.5, 0.01)
+        # Create range sliders
+        st.sidebar.title("Range of Stats")
+        for stat in selected_stats_total:
+            if stat in filtered_data_total:
+                sliders_filter[stat] = st.sidebar.slider(f'Range of {stat}', filtered_data_total[stat][0], filtered_data_total[stat][1], (filtered_data_total[stat][0] + (filtered_data_total[stat][0]+filtered_data_total[stat][1])/4, filtered_data_total[stat][1] - (filtered_data_total[stat][0]+filtered_data_total[stat][1])/4))
+    elif st.session_state.selected_tab == "Per Game Stats":
+        for stat in selected_stats_per_game:
+            sliders[stat] = st.sidebar.slider(f'Importance of {stat}', -1.0, 1.0, 0.5, 0.01)
+        st.sidebar.title("Range of Stats")
+        for stat in selected_stats_per_game:
+            if stat in filtered_data_perGame:
+                sliders_filter[stat] = st.sidebar.slider(f'Range of {stat}', filtered_data_perGame[stat][0], filtered_data_perGame[stat][1], (filtered_data_perGame[stat][0] + (filtered_data_perGame[stat][0]+filtered_data_perGame[stat][1])/4, filtered_data_perGame[stat][1] - (filtered_data_perGame[stat][0]+filtered_data_perGame[stat][1])/4))
+    elif st.session_state.selected_tab == "Team Stats":
+        for stat in selected_stats_per_game:
+            sliders[stat] = st.sidebar.slider(f'Importance of {stat}', -1.0, 1.0, 0.5, 0.01)
+        st.sidebar.title("Range of Stats")
+        for stat in selected_stats_per_game:
+            if stat in filtered_data_teams:
+                sliders_filter[stat] = st.sidebar.slider(f'Range of {stat}', filtered_data_teams[stat][0], filtered_data_teams[stat][1], (filtered_data_teams[stat][0] + (filtered_data_teams[stat][0]+filtered_data_teams[stat][1])/4, filtered_data_teams[stat][1] - (filtered_data_teams[stat][0]+filtered_data_teams[stat][1])/4))
+                
+                
+    # Exclude all rows that don't fit the ranges
+    filtered_df = season_totals_active_players.copy()
+    for col in season_totals_active_players.columns[1:]:
+        if col in sliders_filter:
+            filtered_df = filtered_df[filtered_df[col].between(*sliders_filter[col])]
+
+    season_totals_active_players = filtered_df
+
+    # Same for per game
+    filtered_df = season_perGame_active_players.copy()
+    for col in season_perGame_active_players.columns[1:]:
+        if col in sliders_filter:
+            filtered_df = filtered_df[filtered_df[col].between(*sliders_filter[col])]
+        
+    season_perGame_active_players = filtered_df
 
     # Filter the DataFrame based on selected stats
     if st.session_state.selected_tab == "Total Stats":
@@ -162,44 +246,44 @@ if __name__ == "__main__":
         filtered_data = season_perGame_active_players[selected_stats_per_game]
     elif st.session_state.selected_tab == "Team Stats":
         filtered_data = season_teams[selected_team_stats]
+        
 
     # Calculate weighted sum based on user-defined importance
     normalized_data = (filtered_data - filtered_data.min()) / (filtered_data.max() - filtered_data.min())
-
-    # Calculate the total weighted sum for each player
-    st.sidebar.title('Rank Stats')
-    selected_stats = []
-    sliders = {}
-
-    if st.session_state.selected_tab == "Total Stats":
-        for stat in selected_stats_total:
-            sliders[stat] = st.sidebar.slider(f'Importance of {stat}', 0.0, 1.0, 0.5, 0.01)
-    elif st.session_state.selected_tab == "Per Game Stats":
-        for stat in selected_stats_per_game:
-            sliders[stat] = st.sidebar.slider(f'Importance of {stat}', 0.0, 1.0, 0.5, 0.01)
-    elif st.session_state.selected_tab == "Team Stats":
-        for stat in selected_team_stats:
-            sliders[stat] = st.sidebar.slider(f'Importance of {stat}', 0.0, 1.0, 0.5, 0.01)
-            
+    normalized_dataPG = (filtered_data - filtered_data.min()) / (filtered_data.max() - filtered_data.min())
+    normalized_dataTeams = (filtered_data - filtered_data.min()) / (filtered_data.max() - filtered_data.min())
     # Calculate weighted sum based on user-defined importance
     weighted_totals = normalized_data * pd.Series(sliders)
-
-    #CALCULATE TOTAL WEIGHTED SUM FOR EACH TEAM
-    season_teams['Weighted_Sum'] = weighted_totals.sum(axis=1)
-    
+    weighted_totalsPG = normalized_dataPG * pd.Series(sliders)
+    weighted_totalsTeams = normalized_dataTeams * pd.Series(sliders)
+    season_totals_active_players = season_totals_active_players.round(decimals=2)
+    season_perGame_active_players = season_perGame_active_players.round(decimals=2)
+    season_teams = season_teams.round(decimals=2)
     # Calculate the total weighted sum for each player
     season_totals_active_players['Weighted_Sum'] = weighted_totals.sum(axis=1)
-
-if st.session_state.selected_tab == "Total Stats" or st.session_state.selected_tab == "Per Game Stats":
+    season_perGame_active_players['Weighted_Sum'] = weighted_totalsPG.sum(axis=1)
+    season_teams['Weighted_Sum'] = weighted_totals.sum(axis=1)
     # Display sorted players based on weighted sum
     sorted_players = season_totals_active_players.sort_values(by=['Weighted_Sum', 'PLAYER_NAME'], ascending=[False, True])
-    # Display sorted players based on weighted sum
-    st.write(f"Season {st.session_state.selected_tab} Stats (Regular Season) for Active NBA Players:")
-    st.write(sorted_players)
-elif st.session_state.selected_tab == "Team Stats":
-    # display sorted teams based on weighted sum
-    sorted_teams = season_teams.sort_values(by=['Weighted_Sum', 'TEAM_NAME'], ascending=[False, True])
-
+    sorted_playersPG = season_perGame_active_players.sort_values(by=['Weighted_Sum', 'PLAYER_NAME'], ascending=[False, True])
     # Display sorted teams based on weighted sum
-    st.write(f"Season {st.session_state.selected_tab} Stats (Regular Season) for NBA Teams:")
-    st.write(sorted_teams)
+    sorted_teams = season_teams.sort_values(by=['Weighted_Sum', 'TEAM_NAME'], ascending=[False, True])
+    
+    if drop_unused_stats:
+        if st.session_state.selected_tab == "Total Stats":
+            sorted_players = pd.concat([sorted_players['PLAYER_NAME'], sorted_players[selected_stats_total], sorted_players['Weighted_Sum']], axis = 1)
+        elif st.session_state.selected_tab == "Per Game Stats": 
+            sorted_playersPG = pd.concat([sorted_playersPG['PLAYER_NAME'], sorted_playersPG[selected_stats_per_game], sorted_playersPG['Weighted_Sum']], axis = 1)
+        elif st.session_state.selected_tab == "Team Stats":
+            sorted_teams = pd.concat([sorted_teams['TEAM_NAME'], sorted_playersPG[selected_stats_per_game], sorted_playersPG['Weighted_Sum']], axis = 1)
+
+    if st.session_state.selected_tab == "Total Stats":
+        st.write("Season Total Stats (Regular Season) for Active NBA Players:")
+        st.write(sorted_players)
+    elif st.session_state.selected_tab == "Per Game Stats":
+        st.write("Season Per Game Stats (Regular Season) for Active NBA Players:")
+        st.write(sorted_playersPG)  
+    elif st.session_state.selected_tab == "Team Stats":
+        # Display sorted teams based on weighted sum
+        st.write("Season Stats (Regular Season) for NBA Teams:")
+        st.write(sorted_teams)
