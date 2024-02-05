@@ -64,6 +64,8 @@ def calculate_per_game_stats(data):
     data['BLK '] = data['BLK'] / data['GP']
     data['BLKA '] = data['BLKA'] / data['GP']
     data['MIN '] = data['MIN'] / data['GP']
+    data['DD2 '] = data['DD2'] / data['GP']
+    data['TD3 '] = data['TD3'] / data['GP']
     data = data[columns_to_keepPG]
     return data
 
@@ -79,9 +81,9 @@ if __name__ == "__main__":
 
     # Added a space in every category to ensure it wouldn't get confused when using both the Season total and per game stats
     columns_to_keepPG = [
-        "PLAYER_NAME", "PTS ", "MIN ", "FGM ", "FGA ",
-        "FG3M ", "FG3A ", "FTM ", "FTA ", "OREB ", "DREB ", "REB ",
-        "AST ", "TOV ", "STL ", "BLK ", "BLKA ", "PF ", "PFD ", "PLUS_MINUS ",
+        "PLAYER_NAME", "AGE", "PTS ", "MIN ", "GP", "W", "L", "W_PCT", "FGM ", "FGA ", "FG_PCT",
+        "FG3M ", "FG3A ", "FG3_PCT","FTM ", "FTA ","FT_PCT", "OREB ", "DREB ", "REB ",
+        "AST ", "TOV ", "STL ", "BLK ", "BLKA ", "PF ", "PFD ", "PLUS_MINUS ","DD2 ", "TD3 ",
     ]
     
     columns_to_keepTeam = [
@@ -278,9 +280,14 @@ if __name__ == "__main__":
     weighted_totals = normalized_data * pd.Series(sliders)
     weighted_totalsPG = normalized_dataPG * pd.Series(sliders)
     weighted_totalsTeams = normalized_dataTeams * pd.Series(sliders)
-    season_totals_active_players = season_totals_active_players.round(decimals=2)
-    season_perGame_active_players = season_perGame_active_players.round(decimals=2)
-    season_teams = season_teams.round(decimals=2)
+
+    # Rounding for total stats
+    columns_to_round_totals = ['MIN']
+    season_totals_active_players[columns_to_round_totals] = season_totals_active_players[columns_to_round_totals].round(decimals=2)
+
+    # Rounding for all per game stats
+    season_perGame_active_players[columns_to_keepPG] = season_perGame_active_players[columns_to_keepPG].round(decimals=2)
+
     # Calculate the total weighted sum for each player
     season_totals_active_players['Weighted_Sum'] = weighted_totals.sum(axis=1)
     season_perGame_active_players['Weighted_Sum'] = weighted_totalsPG.sum(axis=1)
