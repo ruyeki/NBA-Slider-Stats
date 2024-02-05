@@ -5,6 +5,7 @@ from nba_api.stats.static import players
 from nba_api.stats.endpoints import scoreboardv2
 import pandas as pd
 from configureFile import generate_streamlit_config
+import os
 
 def get_player_season_totals(active_player_ids, selected_year):
     year = selected_year
