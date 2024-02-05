@@ -52,17 +52,17 @@ if __name__ == "__main__":
     generate_streamlit_config()
     #Removing unneccessary columns
     columns_to_keep = [
-        "PLAYER_NAME", "AGE", "GP", "W", "L", "W_PCT", "MIN", "FGM", "FGA", "FG_PCT",
+        "PLAYER_NAME", "AGE","PTS","MIN", "GP", "W", "L", "W_PCT", "FGM", "FGA", "FG_PCT",
         "FG3M", "FG3A", "FG3_PCT", "FTM", "FTA", "FT_PCT", "OREB", "DREB", "REB",
-        "AST", "TOV", "STL", "BLK", "BLKA", "PF", "PFD", "PTS", "PLUS_MINUS", "DD2", "TD3",
+        "AST", "TOV", "STL", "BLK", "BLKA", "PF", "PFD", "PLUS_MINUS", "DD2", "TD3",
         "NBA_FANTASY_PTS", "NBA_FANTASY_PTS_RANK"
     ]
 
     # Added a space in every category to ensure it wouldn't get confused when using both the Season total and per game stats
     columns_to_keepPG = [
-        "PLAYER_NAME", "MIN ", "FGM ", "FGA ",
+        "PLAYER_NAME", "PTS ", "MIN ", "FGM ", "FGA ",
         "FG3M ", "FG3A ", "FTM ", "FTA ", "OREB ", "DREB ", "REB ",
-        "AST ", "TOV ", "STL ", "BLK ", "BLKA ", "PF ", "PFD ", "PTS ", "PLUS_MINUS ",
+        "AST ", "TOV ", "STL ", "BLK ", "BLKA ", "PF ", "PFD ", "PLUS_MINUS ",
     ]
     
     #For advanced stats
