@@ -127,10 +127,10 @@ if __name__ == "__main__":
 
     if st.session_state.selected_tab == "Total Stats":
         for stat in selected_stats_total:
-            sliders[stat] = st.sidebar.slider(f'Importance of {stat}', 0.0, 1.0, 0.5, 0.01)
+            sliders[stat] = st.sidebar.slider(f'Importance of {stat}', -1.0, 1.0, 0.5, 0.01)
     elif st.session_state.selected_tab == "Per Game Stats":
         for stat in selected_stats_per_game:
-            sliders[stat] = st.sidebar.slider(f'Importance of {stat}', 0.0, 1.0, 0.5, 0.01)
+            sliders[stat] = st.sidebar.slider(f'Importance of {stat}', -1.0, 1.0, 0.5, 0.01)
 
     if st.session_state.selected_tab == "Total Stats":
         filtered_data = season_totals_active_players[selected_stats_total]
