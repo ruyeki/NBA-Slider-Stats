@@ -147,7 +147,8 @@ if __name__ == "__main__":
     # Calculate weighted sum based on user-defined importance
     weighted_totals = normalized_data * pd.Series(sliders)
     weighted_totalsPG = normalized_dataPG * pd.Series(sliders)
-
+    season_totals_active_players = season_totals_active_players.round(decimals=2)
+    season_perGame_active_players = season_perGame_active_players.round(decimals=2)
     # Calculate the total weighted sum for each player
     season_totals_active_players['Weighted_Sum'] = weighted_totals.sum(axis=1)
     season_perGame_active_players['Weighted_Sum'] = weighted_totalsPG.sum(axis=1)
