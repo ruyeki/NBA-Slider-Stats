@@ -7,8 +7,6 @@ from nba_api.stats.endpoints import commonplayerinfo
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import scoreboardv2
 import pandas as pd
-from configureFile import generate_streamlit_config
-import os
 
 def get_player_season_totals(active_player_ids, selected_year, position):
     year = selected_year
@@ -70,7 +68,6 @@ def calculate_per_game_stats(data):
     return data
 
 if __name__ == "__main__":
-    generate_streamlit_config()
     #Removing unneccessary columns
     columns_to_keep = [
         "PLAYER_NAME", "AGE","PTS","MIN", "GP", "W", "L", "W_PCT", "FGM", "FGA", "FG_PCT",
@@ -286,7 +283,7 @@ if __name__ == "__main__":
     season_totals_active_players[columns_to_round_totals] = season_totals_active_players[columns_to_round_totals].round(decimals=2)
 
     # Rounding for all per game stats
-    season_perGame_active_players[columns_to_keepPG] = season_perGame_active_players[columns_to_keepPG].round(decimals=2)
+    season_perGame_active_players[columns_to_keepPG] = season_perGame_active_players[columns_to_keepPG].round(decimals=3)
 
     # Calculate the total weighted sum for each player
     season_totals_active_players['Weighted_Sum'] = weighted_totals.sum(axis=1)
