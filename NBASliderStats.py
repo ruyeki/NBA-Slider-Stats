@@ -18,7 +18,7 @@ def get_player_season_totals(active_player_ids, selected_year, position):
     return filtered_season_totals
 
 #For advanced stats section
-def advanced_stats_df(active_player_ids, selected_year):
+def advanced_stats_df(active_player_ids, selected_year, position):
     advanced_player_stats = playerestimatedmetrics.PlayerEstimatedMetrics(season=selected_year)
     data_frame = advanced_player_stats.get_data_frames()[0]
     active_data_frame = data_frame[data_frame['PLAYER_ID'].isin(active_player_ids)]
@@ -95,22 +95,14 @@ if __name__ == "__main__":
     available_years = [f"{year}-{str(year+1)[-2:]}" for year in range(2023, 1995, -1)]  # Adjust the range as needed
     selected_year = st.sidebar.selectbox('Select a Year', available_years)
 
-    # Add positions filtering
-    positions_checkbox = {
-        'G': True,
-        'F': True,
-        'C': True,
-        'C-F': True,
-    }
-    positions = []
-    # Create checkboxes
-    for key, value in positions_checkbox.items():
-        positions_checkbox[key] = st.checkbox(key, value=value)
+   # Add positions filtering
+    st.sidebar.title('Select Position')
+    selected_position = st.sidebar.radio('Position', ('Any Position','G', 'F', 'C'))
 
-    # Add checked positions into positions list
-    for key, value in positions_checkbox.items():
-        if value:
-            positions.append(key)
+    #Case for if all positions are wanted
+    if 'Any Position' in selected_position:
+        selected_position = []
+    
 
     # Need to change the variable names because it says active right now but I have it
     # set to all NBA players at the moment
@@ -120,9 +112,9 @@ if __name__ == "__main__":
     active_player_ids = [player['id'] for player in active_players_data]
 
     # Throughout this whole rest I have the same lines for both season total and season per game
-    season_totals_active_players = get_player_season_totals(active_player_ids, selected_year, positions)
+    season_totals_active_players = get_player_season_totals(active_player_ids, selected_year, selected_position)
     season_perGame_active_players = calculate_per_game_stats(season_totals_active_players.copy())
-    advanced_stats_active_players = advanced_stats_df(active_player_ids, selected_year, positions)
+    advanced_stats_active_players = advanced_stats_df(active_player_ids, selected_year, selected_position)
     
 
     season_totals_active_players = pd.concat([season_totals_active_players, advanced_stats_active_players.loc[:, ~advanced_stats_active_players.columns.isin(season_totals_active_players.columns)]], axis=1)
