@@ -3,6 +3,7 @@ from nba_api.stats.endpoints import leaguedashplayerstats
 from nba_api.stats.endpoints import playerestimatedmetrics
 from nba_api.stats.endpoints import leaguedashplayerstats
 from nba_api.stats.endpoints import leaguedashteamstats
+from nba_api.stats.endpoints import leaguehustlestatsplayer
 from nba_api.stats.endpoints import commonplayerinfo
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import scoreboardv2
@@ -32,6 +33,14 @@ def advanced_stats_df(active_player_ids, selected_year, position):
     active_data_frame = data_frame[data_frame['PLAYER_ID'].isin(active_player_ids)]
     filtered_data_frame_adv = active_data_frame[columns_to_keepAdv]
     return filtered_data_frame_adv
+
+    #For hustle player stats
+def hustle_stats_df(active_player_ids, selected_year, position):
+    hustle_player_stats = leaguehustlestatsplayer.LeagueHustleStatsPlayer(season=selected_year, player_position_nullable=position)
+    data_frame = hustle_player_stats.get_data_frames()[0]
+    active_data_frame = data_frame[data_frame['PLAYER_ID'].isin(active_player_ids)]
+    filtered_data_frame_hustle = active_data_frame[columns_to_keepHustle]
+    return filtered_data_frame_hustle
 
 # Create min max dictionary of a dataframe
 def filtered_dictionary(data_frame):
@@ -123,6 +132,30 @@ if __name__ == "__main__":
             "E_USG_PCT"
     ]
 
+    columns_to_keepHustle = [
+            "CONTESTED_SHOTS",
+            "CONTESTED_SHOTS_2PT",
+            "CONTESTED_SHOTS_3PT",
+            "DEFLECTIONS",
+            "CHARGES_DRAWN",
+            "SCREEN_ASSISTS",
+            "SCREEN_AST_PTS",
+            "OFF_LOOSE_BALLS_RECOVERED",
+            "DEF_LOOSE_BALLS_RECOVERED",
+            "LOOSE_BALLS_RECOVERED",
+            "PCT_LOOSE_BALLS_RECOVERED_OFF",
+            "PCT_LOOSE_BALLS_RECOVERED_DEF",
+            "OFF_BOXOUTS",
+            "DEF_BOXOUTS",
+            "BOX_OUT_PLAYER_TEAM_REBS",
+            "BOX_OUT_PLAYER_REBS",
+            "BOX_OUTS",
+            "PCT_BOX_OUTS_OFF",
+            "PCT_BOX_OUTS_DEF",
+            "PCT_BOX_OUTS_TEAM_REB",
+            "PCT_BOX_OUTS_REB"
+        ]
+
     st.title('NBA Player Total Stats (Regular Season)')
 
     # Allows the user to choose a year going back to earlier they have, which is 1997??? don't know why
@@ -145,17 +178,24 @@ if __name__ == "__main__":
     active_players_data = players.get_players()
     active_player_ids = [player['id'] for player in active_players_data]
     
+    # Get data for active players
     season_totals_active_players = get_player_season_totals(active_player_ids, selected_year, selected_position)
     advanced_stats_active_players = advanced_stats_df(active_player_ids, selected_year, selected_position)
-    season_totals_active_players = pd.concat([season_totals_active_players, advanced_stats_active_players.loc[:, ~advanced_stats_active_players.columns.isin(season_totals_active_players.columns)]], axis=1)
+    hustle_stats_active_players = hustle_stats_df(active_player_ids, selected_year, selected_position)
 
+    # Concatenate all three DataFrames
+    season_totals_active_players = [season_totals_active_players, advanced_stats_active_players, hustle_stats_active_players]
+    season_totals_active_players = pd.concat(season_totals_active_players, axis=1)
+
+
+    season_totals_active_players = season_totals_active_players.loc[:,~season_totals_active_players.columns.duplicated()] 
     # Sidebar options based on the selected tab
     st.sidebar.title('Choose Stats')
 
     # Two separate tabs for selecting stat types
     st.sidebar.write("### Total Stats")
 
-    selected_stats_total = st.sidebar.multiselect('Select Total Stats to Rank', [col for col in columns_to_keep + columns_to_keepAdv if col != 'PLAYER_NAME'])
+    selected_stats_total = st.sidebar.multiselect('Select Total Stats to Rank', [col for col in columns_to_keep + columns_to_keepAdv + columns_to_keepHustle if col != 'PLAYER_NAME'])
 
 
     # Create filter dictionaries for total and per game

@@ -12,30 +12,14 @@ import pandas as pd
 def get_player_season_totals(active_player_ids, selected_year, position):
     year = selected_year
     # Add position filtering as a parameter
-    season = leaguedashplayerstats.LeagueDashPlayerStats(season=year, player_position_abbreviation_nullable=position)
+    season = leaguedashplayerstats.LeagueDashPlayerStats(season=year, player_position_abbreviation_nullable=position, season_type_all_star='Playoffs')
     season_totals_regular_season = season.get_data_frames()[0]  # Get the SeasonTotalsRegularSeason dataframe
     season_totals_active_players = season_totals_regular_season[season_totals_regular_season['PLAYER_ID'].isin(active_player_ids)]
     filtered_season_totals = season_totals_active_players[columns_to_keep]
     return filtered_season_totals
 
-#For team stats section
-def team_stats_df(selected_year):
-    year = selected_year
-    season_teams_stats = leaguedashteamstats.LeagueDashTeamStats(season = year)
-    season_teams_df = season_teams_stats.get_data_frames()[0]
-    filtered_team_frame = season_teams_df[columns_to_keepTeam]
-    return filtered_team_frame
-    
-#For advanced stats section
-def advanced_stats_df(active_player_ids, selected_year, position):
-    advanced_player_stats = playerestimatedmetrics.PlayerEstimatedMetrics(season=selected_year)
-    data_frame = advanced_player_stats.get_data_frames()[0]
-    active_data_frame = data_frame[data_frame['PLAYER_ID'].isin(active_player_ids)]
-    filtered_data_frame_adv = active_data_frame[columns_to_keepAdv]
-    return filtered_data_frame_adv
-
 def hustle_stats_df(active_player_ids, selected_year, position):
-    hustle_player_stats = leaguehustlestatsplayer.LeagueHustleStatsPlayer(season=selected_year, player_position_nullable=position, per_mode_time='PerGame')
+    hustle_player_stats = leaguehustlestatsplayer.LeagueHustleStatsPlayer(season=selected_year, player_position_nullable=position, per_mode_time = 'PerGame' ,season_type_all_star='Playoffs')
     data_frame = hustle_player_stats.get_data_frames()[0]
     active_data_frame = data_frame[data_frame['PLAYER_ID'].isin(active_player_ids)]
     filtered_data_frame_hustle = active_data_frame[columns_to_keepHustle]
@@ -158,7 +142,7 @@ if __name__ == "__main__":
     st.title('NBA Player Stats (Regular Season)')
 
     # Allows the user to choose a year going back to earlier they have, which is 1997??? don't know why
-    available_years = [f"{year}-{str(year+1)[-2:]}" for year in range(2023, 1995, -1)]  # Adjust the range as needed
+    available_years = [f"{year}-{str(year+1)[-2:]}" for year in range(2022, 1995, -1)]  # Adjust the range as needed
     selected_year = st.sidebar.selectbox('Select a Year', available_years)
 
    # Add positions filtering
@@ -183,7 +167,6 @@ if __name__ == "__main__":
 
     season_perGame_active_players = [season_perGame_active_players, hustle_stats_active_players]
     season_perGame_active_players = pd.concat(season_perGame_active_players, axis=1)
-
 
     season_perGame_active_players = season_perGame_active_players.loc[:,~season_perGame_active_players.columns.duplicated()] 
     # Sidebar options based on the selected tab

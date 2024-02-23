@@ -17,6 +17,8 @@ def get_player_season_totals(active_player_ids, selected_year, position):
     filtered_season_totals = season_totals_active_players[columns_to_keep]
     return filtered_season_totals
 
+
+
 #For team stats section
 def team_stats_df(selected_year):
     year = selected_year
