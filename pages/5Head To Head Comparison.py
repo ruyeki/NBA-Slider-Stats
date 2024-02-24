@@ -127,7 +127,7 @@ if __name__ == "__main__":
     ]
 
     st.title('NBA Player Stats (Regular Season)')
-    
+
     # Allows the user to choose a year going back to earlier they have, which is 1997??? don't know why
     available_years = [f"{year}-{str(year+1)[-2:]}" for year in range(2023, 1995, -1)]  # Adjust the range as needed
     selected_year = st.sidebar.selectbox('Select a Year', available_years)
@@ -206,37 +206,34 @@ if __name__ == "__main__":
     season_perGame_active_players['Weighted_Sum'] = weighted_totalsPG.sum(axis=1)
     # Display sorted players based on weighted sum
     sorted_playersPG = season_perGame_active_players.sort_values(by=['Weighted_Sum', 'PLAYER_NAME'], ascending=[False, True])
-    # Add a section for head-to-head comparison in the sidebar
-st.sidebar.title('Head-to-Head Comparison')
-
-# Allow users to select players and years for comparison
-selected_player_1 = st.sidebar.selectbox('Select Player 1', sorted_playersPG['PLAYER_NAME'].unique())
-selected_year_1 = st.sidebar.selectbox('Select Year 1', available_years)
-
-selected_player_2 = st.sidebar.selectbox('Select Player 2', sorted_playersPG['PLAYER_NAME'].unique())
-selected_year_2 = st.sidebar.selectbox('Select Year 2', available_years)
-
-# Retrieve the stats for the selected players and years
-selected_player_stats_1 = sorted_playersPG[(sorted_playersPG['PLAYER_NAME'] == selected_player_1) & (sorted_playersPG['AGE'] == selected_year_1)]
-selected_player_stats_2 = sorted_playersPG[(sorted_playersPG['PLAYER_NAME'] == selected_player_2) & (sorted_playersPG['AGE'] == selected_year_2)]
-
-# Display the stats of the selected players side by side
-if selected_player_stats_1.empty or selected_player_stats_2.empty:
-    st.write("Please select players and years to compare.")
-else:
-    st.write("Head-to-Head Comparison:")
-
-    # Create a container to display player stats side by side
-    comparison_row = st.empty()
-
-    # Display player stats for the first selected player
-    comparison_row.subheader(f"Stats for {selected_player_1} in {selected_year_1}")
-    comparison_row.write(selected_player_stats_1)
-
-    # Display player stats for the second selected player
-    comparison_row.subheader(f"Stats for {selected_player_2} in {selected_year_2}")
-    comparison_row.write(selected_player_stats_2)
+    
     if drop_unused_stats: 
         sorted_playersPG = pd.concat([sorted_playersPG['PLAYER_NAME'], sorted_playersPG[selected_stats_per_game], sorted_playersPG['Weighted_Sum']], axis = 1)  
 
-    
+    # Add a section for head-to-head comparison in the sidebar
+st.sidebar.title('Head-to-Head Comparison')
+selected_players = st.sidebar.multiselect('Select Players', sorted(sorted_playersPG['PLAYER_NAME'].unique()))
+
+# Retrieve the stats for the selected players and years
+selected_players_stats = {}
+selected_players_stats[selected_year] = sorted_playersPG[sorted_playersPG['PLAYER_NAME'].isin(selected_players)]
+
+# Display the stats of the selected players side by side
+if len(selected_players) > 0:
+    st.write("Head-to-Head Comparison:")
+
+    # Create a container to display player images and stats
+    for player_name in selected_players:
+        st.subheader(f"Stats for {player_name} in {selected_year}")
+        player_row = st.empty()
+
+        # Retrieve player information using the NBA API
+        player_info = players.find_players_by_full_name(player_name)[0]
+        player_id = player_info['id']
+
+
+        player_stats = selected_players_stats[selected_year][selected_players_stats[selected_year]['PLAYER_NAME'] == player_name]
+        player_row.write(player_stats)
+
+else:
+    st.write("Please select players and years to compare.")

@@ -123,7 +123,9 @@ if __name__ == "__main__":
             "E_USG_PCT"
     ]
 
-    st.title('NBA Player Total Stats (Regular Season)')
+    
+
+    st.title('NBA Player Clutch Stats Per Game (Regular Season)')
 
     # Allows the user to choose a year going back to earlier they have, which is 1997??? don't know why
     available_years = [f"{year}-{str(year+1)[-2:]}" for year in range(2023, 1995, -1)]  # Adjust the range as needed
@@ -153,7 +155,7 @@ if __name__ == "__main__":
     # Two separate tabs for selecting stat types
     st.sidebar.write("### Total Clutch Stats")
 
-    selected_stats_total = st.sidebar.multiselect('Select Total Clutch Stats to Rank', [col for col in columns_to_keep + columns_to_keepAdv if col != 'PLAYER_NAME'])
+    selected_stats_total = st.sidebar.multiselect('Select Total Clutch Stats to Rank', [col for col in columns_to_keep if col != 'PLAYER_NAME'])
 
 
     # Create filter dictionaries for total and per game

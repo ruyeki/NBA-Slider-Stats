@@ -155,7 +155,7 @@ if __name__ == "__main__":
             "PCT_BOX_OUTS_REB"
         ]
 
-    st.title('NBA Player Stats (Regular Season)')
+    st.title('NBA Per Game Player Stats (Regular Season)')
 
     # Allows the user to choose a year going back to earlier they have, which is 1997??? don't know why
     available_years = [f"{year}-{str(year+1)[-2:]}" for year in range(2023, 1995, -1)]  # Adjust the range as needed

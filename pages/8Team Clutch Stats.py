@@ -2,7 +2,8 @@ import streamlit as st
 from nba_api.stats.endpoints import leaguedashplayerstats
 from nba_api.stats.endpoints import playerestimatedmetrics
 from nba_api.stats.endpoints import leaguedashplayerstats
-from nba_api.stats.endpoints import leaguedashteamstats
+from nba_api.stats.endpoints import leaguedashteamclutch
+from nba_api.stats.endpoints import leaguehustlestatsteam
 from nba_api.stats.endpoints import commonplayerinfo
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import scoreboardv2
@@ -22,18 +23,17 @@ def get_player_season_totals(active_player_ids, selected_year, position):
 #For team stats section
 def team_stats_df(selected_year):
     year = selected_year
-    season_teams_stats = leaguedashteamstats.LeagueDashTeamStats(season = year)
+    season_teams_stats = leaguedashteamclutch.LeagueDashTeamClutch(season = year, per_mode_detailed='PerGame')
     season_teams_df = season_teams_stats.get_data_frames()[0]
     filtered_team_frame = season_teams_df[columns_to_keepTeam]
     return filtered_team_frame
     
 #For advanced stats section
-def advanced_stats_df(active_player_ids, selected_year, position):
-    advanced_player_stats = playerestimatedmetrics.PlayerEstimatedMetrics(season=selected_year)
-    data_frame = advanced_player_stats.get_data_frames()[0]
-    active_data_frame = data_frame[data_frame['PLAYER_ID'].isin(active_player_ids)]
-    filtered_data_frame_adv = active_data_frame[columns_to_keepAdv]
-    return filtered_data_frame_adv
+def hustle_stats_df(selected_year):
+    hustle_player_stats = leaguehustlestatsteam.LeagueHustleStatsTeam(season=selected_year, per_mode_time='PerGame')
+    data_frame = hustle_player_stats.get_data_frames()[0]
+    filtered_data_frame_hustle = data_frame[columns_to_keepHustle]
+    return filtered_data_frame_hustle
 
 # Create min max dictionary of a dataframe
 def filtered_dictionary(data_frame):
@@ -125,19 +125,35 @@ if __name__ == "__main__":
             "E_USG_PCT"
     ]
 
-    st.title('NBA Player Stats (Regular Season)')
+    columns_to_keepHustle = [
+            "CONTESTED_SHOTS",
+            "CONTESTED_SHOTS_2PT",
+            "CONTESTED_SHOTS_3PT",
+            "DEFLECTIONS",
+            "CHARGES_DRAWN",
+            "SCREEN_ASSISTS",
+            "SCREEN_AST_PTS",
+            "OFF_LOOSE_BALLS_RECOVERED",
+            "DEF_LOOSE_BALLS_RECOVERED",
+            "LOOSE_BALLS_RECOVERED",
+            "PCT_LOOSE_BALLS_RECOVERED_OFF",
+            "PCT_LOOSE_BALLS_RECOVERED_DEF",
+            "OFF_BOXOUTS",
+            "DEF_BOXOUTS",
+            "BOX_OUTS",
+            "PCT_BOX_OUTS_OFF",
+            "PCT_BOX_OUTS_DEF"
+        ]
+
+    st.title('NBA Per Game Team Clutch Stats (Regular Season)')
 
     # Allows the user to choose a year going back to earlier they have, which is 1997??? don't know why
     available_years = [f"{year}-{str(year+1)[-2:]}" for year in range(2023, 1995, -1)]  # Adjust the range as needed
     selected_year = st.sidebar.selectbox('Select a Year', available_years)
 
-   # Add positions filtering
-    st.sidebar.title('Select Position')
-    selected_position = st.sidebar.radio('Position', ('Any Position','G', 'F', 'C'))
+
 
     #Case for if all positions are wanted
-    if 'Any Position' in selected_position:
-        selected_position = []
     
 
     # Need to change the variable names because it says active right now but I have it
@@ -149,7 +165,7 @@ if __name__ == "__main__":
     
     
     season_teams = team_stats_df(selected_year)
-
+    
     # Sidebar options based on the selected tab
     st.sidebar.title('Choose Stats')
 
